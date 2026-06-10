@@ -1,0 +1,60 @@
+package main.java.com.bus.seat.booking.controller.response;
+
+import main.java.com.bus.seat.booking.model.SeatAvailabilityStatus;
+
+public class CheckAvailabilityResponse {
+
+    private SeatAvailabilityStatus seatAvailabilityStatus;
+
+    private String origin;
+
+    private String destination;
+
+    private int passengerCount;
+
+    private double totalPrice;
+
+    public CheckAvailabilityResponse() {
+        super();
+    }
+
+    public SeatAvailabilityStatus isSeatsAvailable() {
+        return seatAvailabilityStatus;
+    }
+
+    public void setSeatAvailabilityStatus(final SeatAvailabilityStatus seatAvailabilityStatus) {
+        this.seatAvailabilityStatus = seatAvailabilityStatus;
+    }
+
+    public String getOrigin() {
+        return origin;
+    }
+
+    public void setOrigin(final String origin) {
+        this.origin = origin;
+    }
+
+    public String getDestination() {
+        return destination;
+    }
+
+    public void setDestination(final String destination) {
+        this.destination = destination;
+    }
+
+    public int getPassengerCount() {
+        return passengerCount;
+    }
+
+    public void setPassengerCount(final int passengerCount) {
+        this.passengerCount = passengerCount;
+    }
+
+    public double getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(final double totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+}
