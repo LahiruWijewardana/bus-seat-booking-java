@@ -1,4 +1,4 @@
-package main.java.com.bus.seat.booking.controller.request;
+package com.bus.seat.booking.controller.request;
 
 public class CheckAvailabilityRequest {
 

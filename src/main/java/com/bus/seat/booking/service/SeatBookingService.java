@@ -1,11 +1,11 @@
-package main.java.com.bus.seat.booking.service;
+package com.bus.seat.booking.service;
 
-import main.java.com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
-import main.java.com.bus.seat.booking.model.*;
+import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
+import com.bus.seat.booking.model.*;
 
 import java.util.*;
 
-public class BookingService {
+public class SeatBookingService {
 
     /**
      * Map Seat number to booked list of Seat bookings

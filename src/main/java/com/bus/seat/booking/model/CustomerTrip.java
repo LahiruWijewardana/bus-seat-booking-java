@@ -1,4 +1,4 @@
-package main.java.com.bus.seat.booking.model;
+package com.bus.seat.booking.model;
 
 import java.util.Arrays;
 import java.util.List;

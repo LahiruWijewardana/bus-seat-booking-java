@@ -1,17 +1,23 @@
-package main.java.com.bus.seat.booking;
+package com.bus.seat.booking;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
+
 public class BusSeatBookingApp {
-    public static void main(String[] args) {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.printf("Hello and welcome!");
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
-        }
+    private static final int PORT = 8080;
+
+    public static void main(String[] args) throws IOException {
+
+        // --- HTTP server ---
+        final HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+
+        // Use a thread pool so concurrent requests don't block each other
+        server.setExecutor(Executors.newFixedThreadPool(10));
+        
+        server.start();
     }
 }

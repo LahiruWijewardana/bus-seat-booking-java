@@ -1,6 +1,6 @@
-package main.java.com.bus.seat.booking.controller.response;
+package com.bus.seat.booking.controller.response;
 
-import main.java.com.bus.seat.booking.model.SeatAvailabilityStatus;
+import com.bus.seat.booking.model.SeatAvailabilityStatus;
 
 public class CheckAvailabilityResponse {
 

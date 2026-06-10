@@ -1,6 +1,5 @@
-package main.java.com.bus.seat.booking.model;
+package com.bus.seat.booking.model;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
