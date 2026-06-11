@@ -1,5 +1,6 @@
 package com.bus.seat.booking;
 
+import com.bus.seat.booking.controller.SeatBookingHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -15,9 +16,13 @@ public class BusSeatBookingApp {
         // --- HTTP server ---
         final HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
 
+        server.createContext("/api/bookings", new SeatBookingHandler());
+
         // Use a thread pool so concurrent requests don't block each other
         server.setExecutor(Executors.newFixedThreadPool(10));
         
         server.start();
+
+        System.out.println("Bus Ticket API running on http://localhost:" + PORT);
     }
 }

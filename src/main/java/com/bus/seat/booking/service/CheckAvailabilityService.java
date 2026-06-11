@@ -5,17 +5,9 @@ import com.bus.seat.booking.model.*;
 
 import java.util.*;
 
-public class SeatBookingService {
+import static com.bus.seat.booking.configuration.DataInitializer.BOOKED_SEATS;
 
-    /**
-     * Map Seat number to booked list of Seat bookings
-     * Ex:
-     *      1A -> { FIRST_TRIP -> [ Booking1, Booking2 ], RETURN_TRIP -> [ Booking6 ] },
-     *      1B -> { FIRST_TRIP -> [ Booking7 ], RETURN_TRIP -> [ Booking12 ] }
-     *      ......
-     *      10D -> { FIRST_TRIP -> [ Booking100 ], RETURN_TRIP -> [ Booking101 ] }
-     */
-    public static final Map<String, Map<BusTrip, List<SeatBooking>>> BOOKED_SEATS = new HashMap<>();
+public class CheckAvailabilityService {
 
     /**
      * Map Seat number to Seat booked status for the trip
@@ -112,12 +104,14 @@ public class SeatBookingService {
             checkAvailabilityResponse.setSeatAvailabilityStatus(SeatAvailabilityStatus.FULLY_AVAILABLE);
             checkAvailabilityResponse.setPassengerCount(passengerCount);
             checkAvailabilityResponse.setTotalPrice(customerTrip.getTripPrice() * passengerCount);
+            checkAvailabilityResponse.setAvailableSeats(availableSeats);
 
         } else if (availableSeatCount < passengerCount) {
 
             checkAvailabilityResponse.setSeatAvailabilityStatus(SeatAvailabilityStatus.PARTIALLY_AVAILABLE);
             checkAvailabilityResponse.setPassengerCount(availableSeatCount);
             checkAvailabilityResponse.setTotalPrice(customerTrip.getTripPrice() * availableSeatCount);
+            checkAvailabilityResponse.setAvailableSeats(availableSeats);
 
         } else {
 

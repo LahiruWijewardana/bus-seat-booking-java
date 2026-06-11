@@ -1,6 +1,9 @@
 package com.bus.seat.booking.controller.response;
 
 import com.bus.seat.booking.model.SeatAvailabilityStatus;
+import com.bus.seat.booking.model.SeatBooking;
+
+import java.util.List;
 
 public class CheckAvailabilityResponse {
 
@@ -13,6 +16,8 @@ public class CheckAvailabilityResponse {
     private int passengerCount;
 
     private double totalPrice;
+
+    private List<SeatBooking> availableSeats;
 
     public CheckAvailabilityResponse() {
         super();
@@ -56,5 +61,13 @@ public class CheckAvailabilityResponse {
 
     public void setTotalPrice(final double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public List<SeatBooking> getAvailableSeats() {
+        return availableSeats;
+    }
+
+    public void setAvailableSeats(final List<SeatBooking> availableSeats) {
+        this.availableSeats = availableSeats;
     }
 }
