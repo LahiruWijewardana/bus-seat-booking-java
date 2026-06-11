@@ -2,24 +2,13 @@ package com.bus.seat.booking.service;
 
 import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
 import com.bus.seat.booking.model.*;
+import com.bus.seat.booking.util.TripUtils;
 
 import java.util.*;
 
 import static com.bus.seat.booking.configuration.DataInitializer.BOOKED_SEATS;
 
 public class CheckAvailabilityService {
-
-    /**
-     * Map Seat number to Seat booked status for the trip
-     * Ex:
-     *      1A -> { AB -> TRUE, BC -> FALSE, ..., BA -> TRUE }
-     *      1B -> { AB -> FALSE, BC -> TRUE, ..., BA -> TRUE }
-     *      ......
-     *      10D -> { AB -> TRUE, BC -> FALSE,..., BA -> FALSE }
-     */
-    public static final Map<String, Map<BusTrip, List<City>>> UNAVAILABLE_CITIES_FOR_SEAT = new HashMap<>();
-
-    private static final int TOTAL_SEAT_COUNT = 40;
 
     private static final List<String> SEAT_COLUMNS = Arrays.asList("A", "B", "C", "D");
 
@@ -35,9 +24,10 @@ public class CheckAvailabilityService {
     public CheckAvailabilityResponse checkSeatAvailability(final String origin, final String destination,
     final int passengerCount, final String customerId) {
 
-        final CustomerTrip customerTrip = this.determineCustomerTrip(origin, destination);
-        final City originCity = City.valueOf(origin);
-        final City destinationCity = City.valueOf(destination);
+        final City originCity = TripUtils.determineCityFromCityString(origin);
+        final City destinationCity = TripUtils.determineCityFromCityString(destination);
+
+        final CustomerTrip customerTrip = TripUtils.determineCustomerTrip(originCity, destinationCity);
         final BusTrip busTrip = customerTrip.getBusTrip();
 
         final Journey journey = new Journey();
@@ -121,19 +111,6 @@ public class CheckAvailabilityService {
         }
 
         return checkAvailabilityResponse;
-    }
-
-    /**
-     * Determine the Customer Trip Enum from origin and destination
-     *
-     * @param origin
-     * @param destination
-     * @return {@link CustomerTrip}
-     */
-    private CustomerTrip determineCustomerTrip(final String origin, final String destination) {
-
-        final String tripString = origin.trim() + destination.trim();
-        return CustomerTrip.valueOf(tripString);
     }
 
     /**

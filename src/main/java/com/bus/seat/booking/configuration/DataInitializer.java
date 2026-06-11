@@ -2,6 +2,7 @@ package com.bus.seat.booking.configuration;
 
 import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatBooking;
+import com.bus.seat.booking.model.Ticket;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,4 +19,9 @@ public class DataInitializer {
      *      10D -> { FIRST_TRIP -> [ Booking100 ], RETURN_TRIP -> [ Booking101 ] }
      */
     public static final Map<String, Map<BusTrip, List<SeatBooking>>> BOOKED_SEATS = new HashMap<>();
+
+    /**
+     * Map of ticket id to ticket
+     */
+    public static final Map<String, Ticket> TICKETS_MAP = new HashMap<>();
 }

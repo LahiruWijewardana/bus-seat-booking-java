@@ -3,11 +3,14 @@ package com.bus.seat.booking.controller;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ResponseHandler {
 
@@ -50,5 +53,16 @@ public class ResponseHandler {
         errorMap.put("error", message);
 
         this.sendResponse(httpExchange, statusCode, errorMap);
+    }
+
+    /**
+     * Read Request body String from HttpExchange
+     *
+     * @param httpExchange
+     * @return Request body String
+     */
+    public String readRequestBody(final HttpExchange httpExchange) {
+        return new BufferedReader(new InputStreamReader(httpExchange.getRequestBody(), StandardCharsets.UTF_8))
+                .lines().collect(Collectors.joining(System.lineSeparator()));
     }
 }

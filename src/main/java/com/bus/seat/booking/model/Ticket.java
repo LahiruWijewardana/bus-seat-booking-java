@@ -1,5 +1,6 @@
 package com.bus.seat.booking.model;
 
+import java.util.List;
 import java.util.UUID;
 
 public class Ticket {
@@ -8,12 +9,19 @@ public class Ticket {
 
     private String customerId;
 
-    private String journeyId;
+    private Journey journey;
+
+    private List<String> bookedSeats;
 
     private Double totalPrice;
 
-    public Ticket() {
-        super();
+    public Ticket(final UUID ticketId, final String customerId, final Journey journey,
+                  final List<String> bookedSeats, final Double totalPrice) {
+        this.ticketId = ticketId;
+        this.customerId = customerId;
+        this.journey = journey;
+        this.bookedSeats = bookedSeats;
+        this.totalPrice = totalPrice;
     }
 
     public UUID getTicketId() {
@@ -32,12 +40,20 @@ public class Ticket {
         this.customerId = customerId;
     }
 
-    public String getJourneyId() {
-        return journeyId;
+    public Journey getJourney() {
+        return journey;
     }
 
-    public void setJourneyId(final String journeyId) {
-        this.journeyId = journeyId;
+    public void setJourney(final Journey journey) {
+        this.journey = journey;
+    }
+
+    public List<String> getBookedSeats() {
+        return bookedSeats;
+    }
+
+    public void setBookedSeats(final List<String> bookedSeats) {
+        this.bookedSeats = bookedSeats;
     }
 
     public Double getTotalPrice() {
