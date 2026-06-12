@@ -1,5 +1,6 @@
 package com.bus.seat.booking.model;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public class Ticket {
 
     private Double totalPrice;
 
+    private Instant createdDateTime;
+
     public Ticket(final UUID ticketId, final String customerId, final Journey journey,
                   final List<String> bookedSeats, final Double totalPrice) {
         this.ticketId = ticketId;
@@ -22,6 +25,7 @@ public class Ticket {
         this.journey = journey;
         this.bookedSeats = bookedSeats;
         this.totalPrice = totalPrice;
+        this.createdDateTime = Instant.now();
     }
 
     public UUID getTicketId() {
@@ -62,5 +66,13 @@ public class Ticket {
 
     public void setTotalPrice(final Double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public Instant getCreatedDateTime() {
+        return createdDateTime;
+    }
+
+    public void setCreatedDateTime(final Instant createdDateTime) {
+        this.createdDateTime = createdDateTime;
     }
 }

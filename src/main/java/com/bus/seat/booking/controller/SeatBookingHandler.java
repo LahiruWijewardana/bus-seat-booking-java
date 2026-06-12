@@ -3,6 +3,7 @@ package com.bus.seat.booking.controller;
 import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
 import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
 import com.bus.seat.booking.exceptions.BadRequestException;
+import com.bus.seat.booking.exceptions.BookingExpiredException;
 import com.bus.seat.booking.exceptions.NotFoundException;
 import com.bus.seat.booking.model.Ticket;
 import com.bus.seat.booking.service.BookingConfirmationService;
@@ -59,7 +60,7 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
             logger.error(notFoundException);
             this.sendErrorResponse(httpExchange, 404, notFoundException.getMessage());
 
-        } catch (BadRequestException badRequestException) {
+        } catch (BadRequestException | BookingExpiredException badRequestException) {
             logger.error(badRequestException);
             this.sendErrorResponse(httpExchange, 400, badRequestException.getMessage());
 
@@ -104,7 +105,8 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
      * @throws NotFoundException
      * @throws BadRequestException
      */
-    private void handleConfirmBookingRequest(final HttpExchange httpExchange) throws IOException, NotFoundException, BadRequestException {
+    private void handleConfirmBookingRequest(final HttpExchange httpExchange)
+    throws IOException, NotFoundException, BadRequestException, BookingExpiredException {
 
         logger.info("REQUEST RECEIVED - CONFIRM BOOKING");
 

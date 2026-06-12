@@ -11,6 +11,7 @@ import com.bus.seat.booking.model.SeatAvailabilityStatus;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.util.TripUtils;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -62,7 +63,7 @@ public class CheckAvailabilityService {
             for (final String seatColumn : SEAT_COLUMNS) {
 
                 try {
-                    DataInitializer.lock.writeLock().lock();
+                    DataInitializer.READ_WRITE_LOCK.writeLock().lock();
 
                     final String seatNumber = seatRow + seatColumn;
 
@@ -90,7 +91,7 @@ public class CheckAvailabilityService {
                     }
 
                 } finally {
-                    DataInitializer.lock.writeLock().unlock();
+                    DataInitializer.READ_WRITE_LOCK.writeLock().unlock();
                 }
 
                 if (availableSeats.size() == passengerCount) {
@@ -178,8 +179,10 @@ public class CheckAvailabilityService {
                 new HashSet<>(customerTrip.getCitiesUnableToOnboard());
 
         final boolean bookingAvailable = seatBookingList.stream()
-                .anyMatch(seatBooking ->
-                        seatBooking.getJourney().getBookedCities().stream()
+                .anyMatch(seatBooking -> (seatBooking.getBookingStatus() == BookingStatus.PENDING
+                        && seatBooking.getCreatedDateTime().plusSeconds(DataInitializer.BOOKING_EXPIRE_SECONDS)
+                        .isBefore(Instant.now()))
+                                || seatBooking.getJourney().getBookedCities().stream()
                                 .noneMatch(unableToOnboardCitiesSet::contains));
 
         if (bookingAvailable) {

@@ -19,6 +19,8 @@ public class SeatBooking {
 
     private Instant bookedDateTime;
 
+    private Instant createdDateTime;
+
     public SeatBooking(final UUID seatBookingId, final String seatNumber, final String customerId,
     final BookingStatus bookingStatus, final Journey journey) {
         super();
@@ -28,6 +30,7 @@ public class SeatBooking {
         this.seatNumber = seatNumber;
         this.bookingStatus = bookingStatus;
         this.journey = journey;
+        this.createdDateTime = Instant.now();
     }
 
     public UUID getSeatBookingId() {
@@ -84,5 +87,13 @@ public class SeatBooking {
 
     public void setBookedDateTime(final Instant bookedDateTime) {
         this.bookedDateTime = bookedDateTime;
+    }
+
+    public Instant getCreatedDateTime() {
+        return createdDateTime;
+    }
+
+    public void setCreatedDateTime(final Instant createdDateTime) {
+        this.createdDateTime = createdDateTime;
     }
 }

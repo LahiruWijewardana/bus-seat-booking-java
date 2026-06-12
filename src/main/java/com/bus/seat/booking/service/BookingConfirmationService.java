@@ -3,6 +3,7 @@ package com.bus.seat.booking.service;
 import com.bus.seat.booking.configuration.DataInitializer;
 import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
 import com.bus.seat.booking.exceptions.BadRequestException;
+import com.bus.seat.booking.exceptions.BookingExpiredException;
 import com.bus.seat.booking.exceptions.NotFoundException;
 import com.bus.seat.booking.model.BookingStatus;
 import com.bus.seat.booking.model.BusTrip;
@@ -11,6 +12,7 @@ import com.bus.seat.booking.model.Ticket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,7 @@ public class BookingConfirmationService {
      * @throws BadRequestException
      */
     public Ticket confirmBooking(final ConfirmBookingRequest confirmBookingRequest)
-    throws NotFoundException, BadRequestException {
+    throws NotFoundException, BadRequestException, BookingExpiredException {
 
         final List<SeatBooking> reservedSeats = confirmBookingRequest.getReservedSeats();
 
@@ -46,10 +48,23 @@ public class BookingConfirmationService {
                         this.retrieveOriginalSeatBooking(requestedSeatBooking, confirmedBookings);
 
                 try {
-                    DataInitializer.lock.writeLock().lock();
+                    DataInitializer.READ_WRITE_LOCK.writeLock().lock();
 
                     if (originalSeatBooking != null) {
+
+                        if (originalSeatBooking.getCreatedDateTime()
+                                .plusSeconds(DataInitializer.BOOKING_EXPIRE_SECONDS).isBefore(Instant.now())) {
+
+                            logger.error("BOOKING EXPIRED: Customer failed to confirmed the booking within 1 minute");
+                            this.reverseBookingIfErrorOccurred(confirmedBookings);
+
+                            throw new BookingExpiredException(
+                                    "BOOKING EXPIRED: Your booking expired. " +
+                                            "Please confirm the booking within 1 minute");
+                        }
+
                         originalSeatBooking.setBookingStatus(BookingStatus.BOOKED);
+                        originalSeatBooking.setBookedDateTime(Instant.now());
                         bookedSeatNumbers.add(originalSeatBooking.getSeatNumber());
                         confirmedBookings.add(originalSeatBooking);
                     } else {
@@ -57,7 +72,7 @@ public class BookingConfirmationService {
                     }
 
                 } finally {
-                    DataInitializer.lock.writeLock().unlock();
+                    DataInitializer.READ_WRITE_LOCK.writeLock().unlock();
                 }
             }
 
@@ -92,7 +107,7 @@ public class BookingConfirmationService {
         SeatBooking originalSeatBooking;
 
         try {
-            DataInitializer.lock.readLock().lock();
+            DataInitializer.READ_WRITE_LOCK.readLock().lock();
 
             final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
                     DataInitializer.BOOKED_SEATS.get(requestedSeatBooking.getSeatNumber());
@@ -114,7 +129,7 @@ public class BookingConfirmationService {
                     .findFirst().orElse(null);
 
         } finally {
-            DataInitializer.lock.readLock().unlock();
+            DataInitializer.READ_WRITE_LOCK.readLock().unlock();
         }
 
         return originalSeatBooking;

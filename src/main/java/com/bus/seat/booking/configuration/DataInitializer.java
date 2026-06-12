@@ -32,5 +32,10 @@ public class DataInitializer {
     /**
      * Reentrant Read Write lock to handle concurrent read writes
      */
-    public static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    public static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+
+    /**
+     * Booking expiration time in seconds
+     */
+    public static final int BOOKING_EXPIRE_SECONDS = 60;
 }
