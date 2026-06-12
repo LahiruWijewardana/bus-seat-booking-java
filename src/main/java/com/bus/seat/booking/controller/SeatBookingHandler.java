@@ -7,6 +7,7 @@ import com.bus.seat.booking.exceptions.NotFoundException;
 import com.bus.seat.booking.model.Ticket;
 import com.bus.seat.booking.service.BookingConfirmationService;
 import com.bus.seat.booking.service.CheckAvailabilityService;
+import com.bus.seat.booking.util.RequestValidator;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -34,13 +35,8 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
     @Override
     public void handle(final HttpExchange httpExchange) throws IOException {
 
-        logger.info("Received a Request");
-
         final String httpMethod = httpExchange.getRequestMethod();
         final String requestPath = httpExchange.getRequestURI().getPath();
-
-        logger.info("Request path : {}", requestPath);
-        logger.info("Request method : {}", httpMethod);
 
         try {
             if ("GET".equalsIgnoreCase(httpMethod)
@@ -55,6 +51,7 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
 
             } else {
 
+                logger.error("METHOD NOT ALLOWED : Can not process the request");
                 this.sendErrorResponse(httpExchange, 405, "Method not allowed");
             }
 
@@ -79,7 +76,8 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
      * @param httpExchange
      * @throws IOException
      */
-    private void handleCheckAvailabilityRequest(final HttpExchange httpExchange) throws IOException {
+    private void handleCheckAvailabilityRequest(final HttpExchange httpExchange)
+    throws IOException, BadRequestException {
 
         logger.info("REQUEST RECEIVED - CHECK AVAILABILITY");
 
@@ -89,6 +87,8 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
         final String destination = requestHeaders.getFirst("destinationCity");
         final String customerId = requestHeaders.getFirst("customerId");
         final String passengerCount = requestHeaders.getFirst("passengerCount");
+
+        RequestValidator.validateCheckAvailabilityRequest(origin, destination, passengerCount, customerId);
 
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(origin, destination,
                 Integer.parseInt(passengerCount), customerId);
@@ -115,6 +115,8 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
         }
 
         final ConfirmBookingRequest confirmBookingRequest = gson.fromJson(requestBody, ConfirmBookingRequest.class);
+
+        RequestValidator.validateConfirmBookingRequest(confirmBookingRequest);
 
         final Ticket ticket = bookingConfirmationService.confirmBooking(confirmBookingRequest);
 

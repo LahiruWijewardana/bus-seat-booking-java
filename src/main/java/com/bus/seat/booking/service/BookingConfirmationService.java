@@ -5,6 +5,7 @@ import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
 import com.bus.seat.booking.exceptions.BadRequestException;
 import com.bus.seat.booking.exceptions.NotFoundException;
 import com.bus.seat.booking.model.BookingStatus;
+import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class BookingConfirmationService {
@@ -38,28 +40,17 @@ public class BookingConfirmationService {
 
         if (reservedSeats != null && !reservedSeats.isEmpty()) {
 
-            for (final SeatBooking seatBooking : reservedSeats) {
+            for (final SeatBooking requestedSeatBooking : reservedSeats) {
 
-                final List<SeatBooking> seatBookingsListOfSeat =
-                        DataInitializer.BOOKED_SEATS.get(seatBooking.getSeatNumber())
-                                .get(seatBooking.getJourney().getBusTrip());
-
-                final SeatBooking originalSeatBooking = seatBookingsListOfSeat.stream().filter(
-                        booking -> booking.getSeatBookingId().equals(seatBooking.getSeatBookingId()))
-                        .findFirst().orElse(null);
+                final SeatBooking originalSeatBooking =
+                        this.retrieveOriginalSeatBooking(requestedSeatBooking, confirmedBookings);
 
                 if (originalSeatBooking != null) {
                     originalSeatBooking.setBookingStatus(BookingStatus.BOOKED);
                     bookedSeatNumbers.add(originalSeatBooking.getSeatNumber());
                     confirmedBookings.add(originalSeatBooking);
                 } else {
-                    logger.error("No booking found for the given seat booking id {}",
-                            seatBooking.getSeatBookingId());
-                    this.reverseBookingIfErrorOccurred(confirmedBookings);
-
-                    throw new NotFoundException(
-                            "NOT FOUND : No booking found for the given seat booking id "
-                                    + seatBooking.getSeatBookingId());
+                    this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
                 }
             }
 
@@ -81,7 +72,37 @@ public class BookingConfirmationService {
     }
 
     /**
-     * Reverse Booking if any error occurred
+     * Retrieve Original Seat booking from saved data set
+     *
+     * @param requestedSeatBooking
+     * @param confirmedBookings
+     * @return Original {@link SeatBooking}
+     * @throws NotFoundException
+     */
+    private SeatBooking retrieveOriginalSeatBooking(final SeatBooking requestedSeatBooking,
+    final List<SeatBooking> confirmedBookings) throws NotFoundException {
+
+        final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
+                DataInitializer.BOOKED_SEATS.get(requestedSeatBooking.getSeatNumber());
+
+        if (busTripToBookingsMap == null || busTripToBookingsMap.isEmpty()) {
+            this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+        }
+
+        final List<SeatBooking> seatBookingsListOfSeat =
+                busTripToBookingsMap.get(requestedSeatBooking.getJourney().getBusTrip());
+
+        if (seatBookingsListOfSeat == null || seatBookingsListOfSeat.isEmpty()) {
+            this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+        }
+
+        return seatBookingsListOfSeat.stream().filter(
+                        booking -> booking.getSeatBookingId().equals(requestedSeatBooking.getSeatBookingId()))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Reverse Confirmed Bookings if any error occurred
      *
      * @param confirmedBookings
      */
@@ -94,5 +115,23 @@ public class BookingConfirmationService {
                 seatBooking.setBookingStatus(BookingStatus.PENDING);
             }
         }
+    }
+
+    /**
+     * Handle error if no record found for the given seat booking
+     *
+     * @param requestedSeatBooking
+     * @param confirmedBookings
+     * @throws NotFoundException
+     */
+    private void handleErrorIfNoRecords(final SeatBooking requestedSeatBooking,
+    final List<SeatBooking> confirmedBookings) throws NotFoundException {
+        logger.error("No booking found for the given seat booking id {}",
+                requestedSeatBooking.getSeatBookingId());
+        this.reverseBookingIfErrorOccurred(confirmedBookings);
+
+        throw new NotFoundException(
+                "NOT FOUND : No booking found for the given seat booking id "
+                        + requestedSeatBooking.getSeatBookingId());
     }
 }
