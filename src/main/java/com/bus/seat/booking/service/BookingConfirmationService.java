@@ -45,12 +45,19 @@ public class BookingConfirmationService {
                 final SeatBooking originalSeatBooking =
                         this.retrieveOriginalSeatBooking(requestedSeatBooking, confirmedBookings);
 
-                if (originalSeatBooking != null) {
-                    originalSeatBooking.setBookingStatus(BookingStatus.BOOKED);
-                    bookedSeatNumbers.add(originalSeatBooking.getSeatNumber());
-                    confirmedBookings.add(originalSeatBooking);
-                } else {
-                    this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+                try {
+                    DataInitializer.lock.writeLock().lock();
+
+                    if (originalSeatBooking != null) {
+                        originalSeatBooking.setBookingStatus(BookingStatus.BOOKED);
+                        bookedSeatNumbers.add(originalSeatBooking.getSeatNumber());
+                        confirmedBookings.add(originalSeatBooking);
+                    } else {
+                        this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+                    }
+
+                } finally {
+                    DataInitializer.lock.writeLock().unlock();
                 }
             }
 
@@ -82,23 +89,35 @@ public class BookingConfirmationService {
     private SeatBooking retrieveOriginalSeatBooking(final SeatBooking requestedSeatBooking,
     final List<SeatBooking> confirmedBookings) throws NotFoundException {
 
-        final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
-                DataInitializer.BOOKED_SEATS.get(requestedSeatBooking.getSeatNumber());
+        SeatBooking originalSeatBooking;
 
-        if (busTripToBookingsMap == null || busTripToBookingsMap.isEmpty()) {
-            this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+        try {
+            DataInitializer.lock.readLock().lock();
+
+            final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
+                    DataInitializer.BOOKED_SEATS.get(requestedSeatBooking.getSeatNumber());
+
+            if (busTripToBookingsMap == null || busTripToBookingsMap.isEmpty()) {
+                this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+            }
+
+            final List<SeatBooking> seatBookingsListOfSeat =
+                    busTripToBookingsMap.get(requestedSeatBooking.getJourney().getBusTrip());
+
+            if (seatBookingsListOfSeat == null || seatBookingsListOfSeat.isEmpty()) {
+                this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+            }
+
+            originalSeatBooking = seatBookingsListOfSeat.stream().filter(
+                            booking ->
+                                    booking.getSeatBookingId().equals(requestedSeatBooking.getSeatBookingId()))
+                    .findFirst().orElse(null);
+
+        } finally {
+            DataInitializer.lock.readLock().unlock();
         }
 
-        final List<SeatBooking> seatBookingsListOfSeat =
-                busTripToBookingsMap.get(requestedSeatBooking.getJourney().getBusTrip());
-
-        if (seatBookingsListOfSeat == null || seatBookingsListOfSeat.isEmpty()) {
-            this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
-        }
-
-        return seatBookingsListOfSeat.stream().filter(
-                        booking -> booking.getSeatBookingId().equals(requestedSeatBooking.getSeatBookingId()))
-                .findFirst().orElse(null);
+        return originalSeatBooking;
     }
 
     /**

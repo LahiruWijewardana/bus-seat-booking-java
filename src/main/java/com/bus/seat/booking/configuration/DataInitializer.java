@@ -7,6 +7,9 @@ import com.bus.seat.booking.model.Ticket;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class DataInitializer {
 
@@ -18,10 +21,16 @@ public class DataInitializer {
      *      ......
      *      10D -> { FIRST_TRIP -> [ Booking100 ], RETURN_TRIP -> [ Booking101 ] }
      */
-    public static final Map<String, Map<BusTrip, List<SeatBooking>>> BOOKED_SEATS = new HashMap<>();
+    public static final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> BOOKED_SEATS =
+            new ConcurrentHashMap<>();
 
     /**
      * Map of ticket id to ticket
      */
     public static final Map<String, Ticket> TICKETS_MAP = new HashMap<>();
+
+    /**
+     * Reentrant Read Write lock to handle concurrent read writes
+     */
+    public static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 }
