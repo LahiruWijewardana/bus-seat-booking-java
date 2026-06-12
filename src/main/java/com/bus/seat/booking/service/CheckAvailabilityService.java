@@ -119,7 +119,7 @@ public class CheckAvailabilityService {
             checkAvailabilityResponse.setTotalPrice(customerTrip.getTripPrice() * passengerCount);
             checkAvailabilityResponse.setAvailableSeats(availableSeats);
 
-        } else if (availableSeatCount < passengerCount) {
+        } else if (availableSeatCount != 0 && availableSeatCount < passengerCount) {
 
             checkAvailabilityResponse.setSeatAvailabilityStatus(SeatAvailabilityStatus.PARTIALLY_AVAILABLE);
             checkAvailabilityResponse.setPassengerCount(availableSeatCount);
