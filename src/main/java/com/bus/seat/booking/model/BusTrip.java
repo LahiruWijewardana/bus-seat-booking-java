@@ -5,7 +5,7 @@ package com.bus.seat.booking.model;
  */
 public enum BusTrip {
 
-    FIRST_TRIP,
+    FIRST_TRIP, // Bus Trip from A to D
 
-    RETURN_TRIP
+    RETURN_TRIP // Bus Trip from D to A
 }

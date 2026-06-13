@@ -2,9 +2,7 @@ package com.bus.seat.booking.controller.response;
 
 import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatAvailabilityStatus;
-import com.bus.seat.booking.model.SeatBooking;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
