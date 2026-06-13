@@ -1,0 +1,476 @@
+package com.bus.seat.booking.controller;
+
+import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
+import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
+import com.bus.seat.booking.exceptions.BadRequestException;
+import com.bus.seat.booking.exceptions.BookingExpiredException;
+import com.bus.seat.booking.exceptions.NotFoundException;
+import com.bus.seat.booking.model.SeatAvailabilityStatus;
+import com.bus.seat.booking.model.SeatBooking;
+import com.bus.seat.booking.model.Ticket;
+import com.bus.seat.booking.service.BookingConfirmationService;
+import com.bus.seat.booking.service.CheckAvailabilityService;
+import com.google.gson.Gson;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+class SeatBookingHandlerTest {
+
+    private SeatBookingHandler seatBookingHandler;
+
+    private HttpExchange httpExchange;
+
+    private final Gson gson = new Gson();
+
+    @BeforeEach
+    void beforeEach() {
+        seatBookingHandler = new SeatBookingHandler();
+        httpExchange = Mockito.mock(HttpExchange.class);
+    }
+
+    @Test
+    void testWhenCheckAvailabilityRequestReceivedThenHandlerShouldRedirectToCheckAvailabilityService()
+    throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "1");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(200, outputStream.toString().length());
+
+        final CheckAvailabilityResponse response =
+                gson.fromJson(outputStream.toString(), CheckAvailabilityResponse.class);
+
+        Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.isSeatsAvailable());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityErroredOriginThenShouldReturnBadRequest()
+    throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // Origin city header is not available in headers
+        final Headers headers = new Headers();
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "1");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        // Handler returns Bad request status
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityErroredDestinationThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // Destination city header is not available in headers
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "1");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityErroredPassengerCountThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // Passenger count header is not available in headers
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityPassengerCountIsNotANumberThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // Passenger count header is available. But it is not a number
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "A");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityPassengerCountIsLessThanOneThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // Passenger count header is available. But it is less than 1
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "0");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingRequestReceivedThenHandlerShouldRedirectToConfirmBookingService()
+    throws IOException, URISyntaxException {
+
+        // Add booking to 1A seat from A to C
+        final CheckAvailabilityResponse checkAvailabilityResponse =
+                new CheckAvailabilityService().checkSeatAvailability(
+                "A", "C", 1, "customer1");
+
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
+        request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(200, outputStream.toString().length());
+
+        final Ticket ticket =
+                gson.fromJson(outputStream.toString(), Ticket.class);
+
+        Assertions.assertEquals("1A", ticket.getBookedSeats().get(0));
+    }
+
+    @Test
+    void testWhenConfirmBookingErroredReservedSeatsThenHandlerShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        // Reserved seats list is null
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingErroredTotalPriceThenHandlerShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        // Total price is zero in request
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setTotalPrice(0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingReturnNotFoundErrorThenHandlerShouldReturnNotFoundStatus()
+            throws IOException, URISyntaxException, NoSuchFieldException, IllegalAccessException, NotFoundException,
+            BadRequestException, BookingExpiredException {
+
+        final BookingConfirmationService bookingConfirmationService = Mockito.mock(BookingConfirmationService.class);
+        final Field field = SeatBookingHandler.class.getDeclaredField("bookingConfirmationService");
+        field.setAccessible(true);
+        field.set(seatBookingHandler, bookingConfirmationService);
+
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        // Mock BookingConfirmationService service to throw Not found Exception
+        Mockito.when(bookingConfirmationService.confirmBooking(ArgumentMatchers.any(ConfirmBookingRequest.class)))
+                .thenThrow(new NotFoundException("Not Found"));
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(404, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingReturnBookingExpiredErrorThenHandlerShouldReturnBadRequestStatus()
+            throws IOException, URISyntaxException, NoSuchFieldException, IllegalAccessException, NotFoundException,
+            BadRequestException, BookingExpiredException {
+
+        final BookingConfirmationService bookingConfirmationService = Mockito.mock(BookingConfirmationService.class);
+        final Field field = SeatBookingHandler.class.getDeclaredField("bookingConfirmationService");
+        field.setAccessible(true);
+        field.set(seatBookingHandler, bookingConfirmationService);
+
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        // Mock BookingConfirmationService service to throw Booking Expired Exception
+        Mockito.when(bookingConfirmationService.confirmBooking(ArgumentMatchers.any(ConfirmBookingRequest.class)))
+                .thenThrow(new BookingExpiredException("Booking expired"));
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingReturnBadRequestErrorThenHandlerShouldReturnBadRequestStatus()
+            throws IOException, URISyntaxException, NoSuchFieldException, IllegalAccessException, NotFoundException,
+            BadRequestException, BookingExpiredException {
+
+        final BookingConfirmationService bookingConfirmationService = Mockito.mock(BookingConfirmationService.class);
+        final Field field = SeatBookingHandler.class.getDeclaredField("bookingConfirmationService");
+        field.setAccessible(true);
+        field.set(seatBookingHandler, bookingConfirmationService);
+
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        // Mock BookingConfirmationService service to throw Bad Request Exception
+        Mockito.when(bookingConfirmationService.confirmBooking(ArgumentMatchers.any(ConfirmBookingRequest.class)))
+                .thenThrow(new BadRequestException("Bad Request"));
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingReturnUnknownErrorThenHandlerShouldReturnInternalServerErrorStatus()
+            throws IOException, URISyntaxException, NoSuchFieldException, IllegalAccessException, NotFoundException,
+            BadRequestException, BookingExpiredException {
+
+        // Mock BookingConfirmationService
+        final BookingConfirmationService bookingConfirmationService = Mockito.mock(BookingConfirmationService.class);
+        final Field field = SeatBookingHandler.class.getDeclaredField("bookingConfirmationService");
+        field.setAccessible(true);
+        field.set(seatBookingHandler, bookingConfirmationService);
+
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        // Mock BookingConfirmationService service to throw Runtime Exception
+        Mockito.when(bookingConfirmationService.confirmBooking(ArgumentMatchers.any(ConfirmBookingRequest.class)))
+                .thenThrow(new RuntimeException("Unknown Exception"));
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(500, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenUnknownRequestReceivedThenHandlerShouldReturnMethodNotAllowedStatus()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/unknown", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(405, outputStream.toString().length());
+    }
+}

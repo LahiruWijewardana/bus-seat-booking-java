@@ -21,8 +21,12 @@ public class SeatBooking {
 
     private Instant createdDateTime;
 
+    public SeatBooking() {
+        super();
+    }
+
     public SeatBooking(final UUID seatBookingId, final String seatNumber, final String customerId,
-    final BookingStatus bookingStatus, final Journey journey) {
+                       final BookingStatus bookingStatus, final Journey journey) {
         super();
 
         this.seatBookingId = seatBookingId;

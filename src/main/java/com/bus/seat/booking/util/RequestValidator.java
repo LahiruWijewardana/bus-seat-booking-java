@@ -41,7 +41,7 @@ public class RequestValidator {
             throw new BadRequestException("passengerCount should be an Integer");
         }
 
-        if (passengerCountNumber <= 0) {
+        if (passengerCountNumber < 1) {
             throw new BadRequestException("passengerCount should be greater than zero");
         }
     }
