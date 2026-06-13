@@ -59,12 +59,12 @@ public class BookingConfirmationService {
                         if (originalSeatBooking.getCreatedDateTime()
                                 .plusSeconds(DataInitializer.BOOKING_EXPIRE_SECONDS).isBefore(Instant.now())) {
 
-                            logger.error("BOOKING EXPIRED: Customer failed to confirmed the booking within 1 minute");
+                            logger.error("BOOKING EXPIRED: Customer failed to confirmed the booking within 2 minutes");
                             this.reverseBookingIfErrorOccurred(confirmedBookings);
 
                             throw new BookingExpiredException(
                                     "BOOKING EXPIRED: Your booking expired. " +
-                                            "Please confirm the booking within 1 minute");
+                                            "Please confirm the booking within 2 minutes");
                         }
 
                         originalSeatBooking.setBookingStatus(BookingStatus.BOOKED);

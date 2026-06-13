@@ -87,7 +87,7 @@ class BookingConfirmationServiceTest {
         // Change seat booking create date time before 2 minutes
         final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get("1A")
                 .get(checkAvailabilityResponse.getBusTrip()).get(0);
-        seatBooking.setCreatedDateTime(Instant.now().minusSeconds(120));
+        seatBooking.setCreatedDateTime(Instant.now().minusSeconds(180));
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());

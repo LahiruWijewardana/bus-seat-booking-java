@@ -37,5 +37,5 @@ public class DataInitializer {
     /**
      * Booking expiration time in seconds
      */
-    public static final int BOOKING_EXPIRE_SECONDS = 60;
+    public static final int BOOKING_EXPIRE_SECONDS = 120;
 }
