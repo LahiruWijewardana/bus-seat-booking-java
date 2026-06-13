@@ -1,5 +1,6 @@
 package com.bus.seat.booking.controller;
 
+import com.bus.seat.booking.configuration.DataInitializer;
 import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
 import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
 import com.bus.seat.booking.exceptions.BadRequestException;
@@ -41,6 +42,7 @@ class SeatBookingHandlerTest {
 
     @BeforeEach
     void beforeEach() {
+        DataInitializer.BOOKED_SEATS.clear();
         seatBookingHandler = new SeatBookingHandler();
         httpExchange = Mockito.mock(HttpExchange.class);
     }

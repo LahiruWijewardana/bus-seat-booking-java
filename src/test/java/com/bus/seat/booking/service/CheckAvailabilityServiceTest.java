@@ -128,7 +128,7 @@ class CheckAvailabilityServiceTest {
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
                         BookingStatus.PENDING, journey);
-        seatBooking.setCreatedDateTime(Instant.now().minusSeconds(120));
+        seatBooking.setCreatedDateTime(Instant.now().minusSeconds(180));
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
         seatBookingList.add(seatBooking);
