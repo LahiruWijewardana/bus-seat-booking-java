@@ -33,7 +33,8 @@ public class BookingConfirmationService {
     public Ticket confirmBooking(final ConfirmBookingRequest confirmBookingRequest)
     throws NotFoundException, BadRequestException, BookingExpiredException {
 
-        final List<SeatBooking> reservedSeats = confirmBookingRequest.getReservedSeats();
+        final Map<String, UUID> reservedSeats = confirmBookingRequest.getReservedSeats();
+        final BusTrip busTrip = confirmBookingRequest.getBusTrip();
 
         final List<String> bookedSeatNumbers = new ArrayList<>();
         final List<SeatBooking> confirmedBookings = new ArrayList<>();
@@ -42,10 +43,13 @@ public class BookingConfirmationService {
 
         if (reservedSeats != null && !reservedSeats.isEmpty()) {
 
-            for (final SeatBooking requestedSeatBooking : reservedSeats) {
+            for (final Map.Entry<String, UUID> requestedSeatBooking : reservedSeats.entrySet()) {
+
+                final String seatNumber = requestedSeatBooking.getKey();
+                final UUID seatBookingId = requestedSeatBooking.getValue();
 
                 final SeatBooking originalSeatBooking =
-                        this.retrieveOriginalSeatBooking(requestedSeatBooking, confirmedBookings);
+                        this.retrieveOriginalSeatBooking(seatNumber, seatBookingId, busTrip, confirmedBookings);
 
                 try {
                     DataInitializer.READ_WRITE_LOCK.writeLock().lock();
@@ -68,7 +72,7 @@ public class BookingConfirmationService {
                         bookedSeatNumbers.add(originalSeatBooking.getSeatNumber());
                         confirmedBookings.add(originalSeatBooking);
                     } else {
-                        this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+                        this.handleErrorIfNoRecords(seatBookingId, confirmedBookings);
                     }
 
                 } finally {
@@ -77,7 +81,7 @@ public class BookingConfirmationService {
             }
 
             final UUID ticketId = UUID.randomUUID();
-            ticket = new Ticket(ticketId, confirmBookingRequest.getCustomerId(), reservedSeats.get(0).getJourney(),
+            ticket = new Ticket(ticketId, confirmBookingRequest.getCustomerId(), confirmedBookings.get(0).getJourney(),
                     bookedSeatNumbers, confirmBookingRequest.getTotalPrice());
 
             DataInitializer.TICKETS_MAP.put(ticketId.toString(), ticket);
@@ -96,13 +100,15 @@ public class BookingConfirmationService {
     /**
      * Retrieve Original Seat booking from saved data set
      *
-     * @param requestedSeatBooking
+     * @param seatNumber
+     * @param seatBookingId
+     * @param busTrip
      * @param confirmedBookings
      * @return Original {@link SeatBooking}
      * @throws NotFoundException
      */
-    private SeatBooking retrieveOriginalSeatBooking(final SeatBooking requestedSeatBooking,
-    final List<SeatBooking> confirmedBookings) throws NotFoundException {
+    private SeatBooking retrieveOriginalSeatBooking(final String seatNumber, final UUID seatBookingId,
+    final BusTrip busTrip, final List<SeatBooking> confirmedBookings) throws NotFoundException {
 
         SeatBooking originalSeatBooking;
 
@@ -110,22 +116,21 @@ public class BookingConfirmationService {
             DataInitializer.READ_WRITE_LOCK.readLock().lock();
 
             final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
-                    DataInitializer.BOOKED_SEATS.get(requestedSeatBooking.getSeatNumber());
+                    DataInitializer.BOOKED_SEATS.get(seatNumber);
 
             if (busTripToBookingsMap == null || busTripToBookingsMap.isEmpty()) {
-                this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+                this.handleErrorIfNoRecords(seatBookingId, confirmedBookings);
             }
 
-            final List<SeatBooking> seatBookingsListOfSeat =
-                    busTripToBookingsMap.get(requestedSeatBooking.getJourney().getBusTrip());
+            final List<SeatBooking> seatBookingsListOfSeat = busTripToBookingsMap.get(busTrip);
 
             if (seatBookingsListOfSeat == null || seatBookingsListOfSeat.isEmpty()) {
-                this.handleErrorIfNoRecords(requestedSeatBooking, confirmedBookings);
+                this.handleErrorIfNoRecords(seatBookingId, confirmedBookings);
             }
 
             originalSeatBooking = seatBookingsListOfSeat.stream().filter(
                             booking ->
-                                    booking.getSeatBookingId().equals(requestedSeatBooking.getSeatBookingId()))
+                                    booking.getSeatBookingId().equals(seatBookingId))
                     .findFirst().orElse(null);
 
         } finally {
@@ -154,18 +159,16 @@ public class BookingConfirmationService {
     /**
      * Handle error if no record found for the given seat booking
      *
-     * @param requestedSeatBooking
+     * @param seatBookingId
      * @param confirmedBookings
      * @throws NotFoundException
      */
-    private void handleErrorIfNoRecords(final SeatBooking requestedSeatBooking,
+    private void handleErrorIfNoRecords(final UUID seatBookingId,
     final List<SeatBooking> confirmedBookings) throws NotFoundException {
-        logger.error("No booking found for the given seat booking id {}",
-                requestedSeatBooking.getSeatBookingId());
+        logger.error("No booking found for the given seat booking id {}", seatBookingId);
         this.reverseBookingIfErrorOccurred(confirmedBookings);
 
         throw new NotFoundException(
-                "NOT FOUND : No booking found for the given seat booking id "
-                        + requestedSeatBooking.getSeatBookingId());
+                "NOT FOUND : No booking found for the given seat booking id " + seatBookingId);
     }
 }

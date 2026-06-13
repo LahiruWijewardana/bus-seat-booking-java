@@ -17,6 +17,8 @@ public class Journey {
 
     private List<City> bookedCities;
 
+    private String estimatedDeparture;
+
     private String estimatedArrival;
 
     public Journey() {
@@ -69,6 +71,14 @@ public class Journey {
 
     public void setBookedCities(final List<City> bookedCities) {
         this.bookedCities = bookedCities;
+    }
+
+    public String getEstimatedDeparture() {
+        return estimatedDeparture;
+    }
+
+    public void setEstimatedDeparture(final String estimatedDeparture) {
+        this.estimatedDeparture = estimatedDeparture;
     }
 
     public String getEstimatedArrival() {

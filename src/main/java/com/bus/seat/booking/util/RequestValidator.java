@@ -58,6 +58,10 @@ public class RequestValidator {
             throw new BadRequestException("reservedSeats can not be NULL or Empty");
         }
 
+        if (request.getBusTrip() == null) {
+            throw new BadRequestException("busTrip can not be NULL");
+        }
+
         if (request.getTotalPrice() <= 0) {
             throw new BadRequestException("totalPrice should be greater than zero");
         }

@@ -5,8 +5,8 @@ import com.bus.seat.booking.controller.response.CheckAvailabilityResponse;
 import com.bus.seat.booking.exceptions.BadRequestException;
 import com.bus.seat.booking.exceptions.BookingExpiredException;
 import com.bus.seat.booking.exceptions.NotFoundException;
+import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatAvailabilityStatus;
-import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
 import com.bus.seat.booking.service.BookingConfirmationService;
 import com.bus.seat.booking.service.CheckAvailabilityService;
@@ -27,7 +27,9 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 class SeatBookingHandlerTest {
 
@@ -218,6 +220,7 @@ class SeatBookingHandlerTest {
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
+        request.setBusTrip(checkAvailabilityResponse.getBusTrip());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -251,6 +254,39 @@ class SeatBookingHandlerTest {
 
         // Reserved seats list is null
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingErroredBusTripThenHandlerShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
+        // bus trip is null
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(reservedSeatsMap);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -277,9 +313,13 @@ class SeatBookingHandlerTest {
     void testWhenConfirmBookingErroredTotalPriceThenHandlerShouldReturnBadRequest()
             throws IOException, URISyntaxException {
 
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
         // Total price is zero in request
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(0);
         request.setCustomerId("customerId1");
 
@@ -312,8 +352,12 @@ class SeatBookingHandlerTest {
         field.setAccessible(true);
         field.set(seatBookingHandler, bookingConfirmationService);
 
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -350,8 +394,12 @@ class SeatBookingHandlerTest {
         field.setAccessible(true);
         field.set(seatBookingHandler, bookingConfirmationService);
 
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -388,8 +436,12 @@ class SeatBookingHandlerTest {
         field.setAccessible(true);
         field.set(seatBookingHandler, bookingConfirmationService);
 
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -427,8 +479,12 @@ class SeatBookingHandlerTest {
         field.setAccessible(true);
         field.set(seatBookingHandler, bookingConfirmationService);
 
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(new SeatBooking()));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 

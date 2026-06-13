@@ -14,8 +14,10 @@ import com.bus.seat.booking.util.TripUtils;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,11 +54,13 @@ public class CheckAvailabilityService {
         journey.setCustomerTrip(customerTrip);
         journey.setBusTrip(busTrip);
         journey.setBookedCities(customerTrip.getCitiesUnableToOnboard());
+        journey.setEstimatedDeparture(busTrip == BusTrip.FIRST_TRIP
+                ? originCity.getFirstTripEstimatedArrivalTime() : originCity.getReturnTripEstimatedArrivalTime());
         journey.setEstimatedArrival(busTrip == BusTrip.FIRST_TRIP
                 ? destinationCity.getFirstTripEstimatedArrivalTime()
                 : destinationCity.getReturnTripEstimatedArrivalTime());
 
-        final List<SeatBooking> availableSeats = new ArrayList<>();
+        final Map<String, UUID> availableSeats = new HashMap<>();
 
         for (int seatRow = 1; seatRow <= 10; seatRow++) {
 
@@ -111,6 +115,7 @@ public class CheckAvailabilityService {
         final CheckAvailabilityResponse checkAvailabilityResponse = new CheckAvailabilityResponse();
         checkAvailabilityResponse.setOrigin(originCity.name());
         checkAvailabilityResponse.setDestination(destinationCity.name());
+        checkAvailabilityResponse.setBusTrip(busTrip);
 
         if (availableSeatCount == passengerCount) {
 
@@ -146,7 +151,7 @@ public class CheckAvailabilityService {
      * @param availableSeats
      */
     private void checkSeatWhenWholeSeatIsAvailable(final String customerId, final Journey journey,
-    final BusTrip busTrip, final String seatNumber, final List<SeatBooking> availableSeats) {
+    final BusTrip busTrip, final String seatNumber, final Map<String, UUID> availableSeats) {
 
         final SeatBooking seatBooking = this.createPendingSeatBooking(seatNumber, customerId, journey);
 
@@ -155,7 +160,7 @@ public class CheckAvailabilityService {
 
         BOOKED_SEATS.put(seatNumber, busTripToBookingsMap);
 
-        availableSeats.add(seatBooking);
+        availableSeats.put(seatNumber, seatBooking.getSeatBookingId());
     }
 
     /**
@@ -171,7 +176,7 @@ public class CheckAvailabilityService {
      */
     private void checkSeatWhenBookingsAreAvailable(final String customerId, final Journey journey,
     final BusTrip busTrip, final CustomerTrip customerTrip, final String seatNumber,
-    final ConcurrentMap<BusTrip, List<SeatBooking>> busTripBookingsMap, final List<SeatBooking> availableSeats) {
+    final ConcurrentMap<BusTrip, List<SeatBooking>> busTripBookingsMap, final Map<String, UUID> availableSeats) {
 
         final List<SeatBooking> seatBookingList = busTripBookingsMap.get(busTrip);
 
@@ -192,7 +197,7 @@ public class CheckAvailabilityService {
 
             seatBookingList.add(seatBooking);
 
-            availableSeats.add(seatBooking);
+            availableSeats.put(seatNumber, seatBooking.getSeatBookingId());
         }
     }
 
@@ -208,7 +213,7 @@ public class CheckAvailabilityService {
      */
     private void checkSeatWhenSeatAvailableForTheWholeTrip(final String customerId, final Journey journey,
     final BusTrip busTrip, final String seatNumber, final ConcurrentMap<BusTrip, List<SeatBooking>> busTripBookingsMap,
-    final List<SeatBooking> availableSeats) {
+    final Map<String, UUID> availableSeats) {
 
         final SeatBooking seatBooking = this.createPendingSeatBooking(seatNumber, customerId, journey);
 
@@ -218,7 +223,7 @@ public class CheckAvailabilityService {
 
         busTripBookingsMap.put(busTrip, seatBookingList);
 
-        availableSeats.add(seatBooking);
+        availableSeats.put(seatNumber, seatBooking.getSeatBookingId());
     }
 
     /**

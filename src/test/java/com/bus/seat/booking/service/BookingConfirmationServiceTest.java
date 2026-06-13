@@ -8,9 +8,6 @@ import com.bus.seat.booking.exceptions.BookingExpiredException;
 import com.bus.seat.booking.exceptions.NotFoundException;
 import com.bus.seat.booking.model.BookingStatus;
 import com.bus.seat.booking.model.BusTrip;
-import com.bus.seat.booking.model.City;
-import com.bus.seat.booking.model.CustomerTrip;
-import com.bus.seat.booking.model.Journey;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
 import org.junit.jupiter.api.Assertions;
@@ -18,8 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 class BookingConfirmationServiceTest {
@@ -45,6 +42,7 @@ class BookingConfirmationServiceTest {
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
+        request.setBusTrip(checkAvailabilityResponse.getBusTrip());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -65,12 +63,13 @@ class BookingConfirmationServiceTest {
         final CheckAvailabilityResponse checkAvailabilityResponse = checkAvailabilityService.checkSeatAvailability(
                 "A", "C", 1, "customer1");
 
-        // Create new Seat Booking with different seat booking id
-        final SeatBooking seatBooking = new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                BookingStatus.PENDING, checkAvailabilityResponse.getAvailableSeats().get(0).getJourney());
+        // Add different seat booking id
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(Arrays.asList(seatBooking));
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(checkAvailabilityResponse.getBusTrip());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -86,11 +85,13 @@ class BookingConfirmationServiceTest {
                 "A", "C", 1, "customer1");
 
         // Change seat booking create date time before 2 minutes
-        final SeatBooking seatBooking = checkAvailabilityResponse.getAvailableSeats().get(0);
+        final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get("1A")
+                .get(checkAvailabilityResponse.getBusTrip()).get(0);
         seatBooking.setCreatedDateTime(Instant.now().minusSeconds(120));
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
+        request.setBusTrip(checkAvailabilityResponse.getBusTrip());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -103,7 +104,8 @@ class BookingConfirmationServiceTest {
     void testWhenThereAreNoBookingsButProvidedAOneThenShouldReturnBadRequestException() {
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
-        request.setReservedSeats(new ArrayList<>());
+        request.setReservedSeats(new HashMap<>());
+        request.setBusTrip(BusTrip.FIRST_TRIP);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 

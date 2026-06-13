@@ -38,7 +38,7 @@ class CheckAvailabilityServiceTest {
                 "A", "B", 1, "customer1");
 
         Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.isSeatsAvailable());
-        Assertions.assertEquals("1A", response.getAvailableSeats().get(0).getSeatNumber());
+        Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
     }
 
     @Test
@@ -78,7 +78,8 @@ class CheckAvailabilityServiceTest {
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
                 "C", "D", 1, "customer1");
 
-        Assertions.assertEquals("1A", response.getAvailableSeats().get(0).getSeatNumber());
+        Assertions.assertEquals(1, response.getAvailableSeats().size());
+        Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
     }
 
     @Test
@@ -109,7 +110,8 @@ class CheckAvailabilityServiceTest {
                 "A", "B", 1, "customer1");
 
         // Check availability add booking for 1B seat since there is a booking in 1A seat from A to C
-        Assertions.assertEquals("1B", response.getAvailableSeats().get(0).getSeatNumber());
+        Assertions.assertEquals(1, response.getAvailableSeats().size());
+        Assertions.assertTrue(response.getAvailableSeats().containsKey("1B"));
     }
 
     @Test
@@ -141,7 +143,8 @@ class CheckAvailabilityServiceTest {
                 "A", "C", 1, "customer1");
 
         // Check availability add booking for 1A seat since previous booking is expired without confirmation
-        Assertions.assertEquals("1A", response.getAvailableSeats().get(0).getSeatNumber());
+        Assertions.assertEquals(1, response.getAvailableSeats().size());
+        Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
     }
 
     @Test
@@ -172,8 +175,9 @@ class CheckAvailabilityServiceTest {
                 "D", "C", 1, "customer1");
 
         // Check availability add booking for 1A seat since it is fully available for return trip
-        Assertions.assertEquals("1A", response.getAvailableSeats().get(0).getSeatNumber());
-        Assertions.assertEquals(BusTrip.RETURN_TRIP, response.getAvailableSeats().get(0).getJourney().getBusTrip());
+        Assertions.assertEquals(1, response.getAvailableSeats().size());
+        Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
+        Assertions.assertEquals(BusTrip.RETURN_TRIP, response.getBusTrip());
     }
 
     @Test

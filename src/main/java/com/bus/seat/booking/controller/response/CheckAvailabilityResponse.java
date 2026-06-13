@@ -1,9 +1,12 @@
 package com.bus.seat.booking.controller.response;
 
+import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatAvailabilityStatus;
 import com.bus.seat.booking.model.SeatBooking;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class CheckAvailabilityResponse {
 
@@ -17,7 +20,9 @@ public class CheckAvailabilityResponse {
 
     private double totalPrice;
 
-    private List<SeatBooking> availableSeats;
+    private Map<String, UUID> availableSeats;
+
+    private BusTrip busTrip;
 
     public CheckAvailabilityResponse() {
         super();
@@ -63,11 +68,19 @@ public class CheckAvailabilityResponse {
         this.totalPrice = totalPrice;
     }
 
-    public List<SeatBooking> getAvailableSeats() {
+    public Map<String, UUID> getAvailableSeats() {
         return availableSeats;
     }
 
-    public void setAvailableSeats(final List<SeatBooking> availableSeats) {
+    public void setAvailableSeats(final Map<String, UUID> availableSeats) {
         this.availableSeats = availableSeats;
+    }
+
+    public BusTrip getBusTrip() {
+        return busTrip;
+    }
+
+    public void setBusTrip(final BusTrip busTrip) {
+        this.busTrip = busTrip;
     }
 }
