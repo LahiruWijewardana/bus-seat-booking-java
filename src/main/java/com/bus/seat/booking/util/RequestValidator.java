@@ -3,6 +3,8 @@ package com.bus.seat.booking.util;
 import com.bus.seat.booking.controller.request.ConfirmBookingRequest;
 import com.bus.seat.booking.exceptions.BadRequestException;
 
+import java.time.LocalDate;
+
 public class RequestValidator {
 
     /**
@@ -12,10 +14,11 @@ public class RequestValidator {
      * @param destinationCity
      * @param passengerCount
      * @param customerId
+     * @param dateString
      * @throws BadRequestException
      */
     public static void validateCheckAvailabilityRequest(final String originCity, final String destinationCity,
-    final String passengerCount, final String customerId) throws BadRequestException {
+    final String passengerCount, final String customerId, final String dateString) throws BadRequestException {
 
         if (checkIfValidString(originCity)) {
             throw new BadRequestException("originCity can not be NULL or EMPTY");
@@ -44,6 +47,20 @@ public class RequestValidator {
         if (passengerCountNumber < 1) {
             throw new BadRequestException("passengerCount should be greater than zero");
         }
+
+        if (checkIfValidString(dateString)) {
+            throw new BadRequestException("dateString can not be NULL or EMPTY");
+        }
+
+        final LocalDate date = DateUtils.dateStringToDate(dateString);
+
+        if (date == null) {
+            throw new BadRequestException("Invalid dateString. Date should be in yyyy-MM-dd format");
+        }
+
+        if (!(LocalDate.now().equals(date) || LocalDate.now().isBefore(date))) {
+            throw new BadRequestException("bookingDate should equal to today or future date");
+        }
     }
 
     /**
@@ -68,6 +85,20 @@ public class RequestValidator {
 
         if (checkIfValidString(request.getCustomerId())) {
             throw new BadRequestException("customerId can not be NULL or EMPTY");
+        }
+
+        if (checkIfValidString(request.getBookingDate())) {
+            throw new BadRequestException("bookingDate can not be NULL or EMPTY");
+        }
+
+        final LocalDate date = DateUtils.dateStringToDate(request.getBookingDate());
+
+        if (date == null) {
+            throw new BadRequestException("Invalid bookingDate. Date should be in yyyy-MM-dd format");
+        }
+
+        if (!(LocalDate.now().equals(date) || LocalDate.now().isBefore(date))) {
+            throw new BadRequestException("bookingDate should equal to today or future date");
         }
     }
 

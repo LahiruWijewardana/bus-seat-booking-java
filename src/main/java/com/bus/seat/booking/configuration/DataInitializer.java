@@ -4,6 +4,7 @@ import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ public class DataInitializer {
      *      ......
      *      10D -> { FIRST_TRIP -> [ Booking100 ], RETURN_TRIP -> [ Booking101 ] }
      */
-    public static final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> BOOKED_SEATS =
+    public static final ConcurrentMap<LocalDate, ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>>> BOOKED_SEATS =
             new ConcurrentHashMap<>();
 
     /**

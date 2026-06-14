@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -24,6 +25,15 @@ class BookingConfirmationServiceTest {
     private BookingConfirmationService bookingConfirmationService;
 
     private CheckAvailabilityService checkAvailabilityService;
+
+    private final LocalDate testBookingDate;
+
+    private final String testBookingDateString;
+
+    BookingConfirmationServiceTest() {
+        testBookingDate = LocalDate.now();
+        testBookingDateString = testBookingDate.toString();
+    }
 
     @BeforeEach
     void beforeEach() {
@@ -38,18 +48,20 @@ class BookingConfirmationServiceTest {
 
         // Add Booking for 1A seat. Origin A. Destination C
         final CheckAvailabilityResponse checkAvailabilityResponse = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 1, "customer1");
+                "A", "C", 1, "customer1", testBookingDateString);
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
         request.setBusTrip(checkAvailabilityResponse.getBusTrip());
+        request.setBookingDate(checkAvailabilityResponse.getBookingDate());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
         // Confirm Booking
         final Ticket ticket = bookingConfirmationService.confirmBooking(request);
 
-        final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get("1A").get(BusTrip.FIRST_TRIP).get(0);
+        final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get(testBookingDate)
+                .get("1A").get(BusTrip.FIRST_TRIP).get(0);
 
         // Booking status changed to BOOKED after confirmation
         Assertions.assertEquals(BookingStatus.BOOKED, seatBooking.getBookingStatus());
@@ -61,7 +73,7 @@ class BookingConfirmationServiceTest {
 
         // Add Booking for 1A seat. Origin A. Destination C
         final CheckAvailabilityResponse checkAvailabilityResponse = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 1, "customer1");
+                "A", "C", 1, "customer1", testBookingDateString);
 
         // Add different seat booking id
         final Map<String, UUID> reservedSeatsMap = new HashMap<>();
@@ -70,6 +82,7 @@ class BookingConfirmationServiceTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(checkAvailabilityResponse.getBusTrip());
+        request.setBookingDate(checkAvailabilityResponse.getBookingDate());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -82,16 +95,17 @@ class BookingConfirmationServiceTest {
 
         // Add Booking for 1A seat. Origin A. Destination C
         final CheckAvailabilityResponse checkAvailabilityResponse = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 1, "customer1");
+                "A", "C", 1, "customer1", testBookingDateString);
 
         // Change seat booking create date time before 2 minutes
-        final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get("1A")
+        final SeatBooking seatBooking = DataInitializer.BOOKED_SEATS.get(testBookingDate).get("1A")
                 .get(checkAvailabilityResponse.getBusTrip()).get(0);
         seatBooking.setCreatedDateTime(Instant.now().minusSeconds(180));
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
         request.setBusTrip(checkAvailabilityResponse.getBusTrip());
+        request.setBookingDate(checkAvailabilityResponse.getBookingDate());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -106,6 +120,7 @@ class BookingConfirmationServiceTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(new HashMap<>());
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 

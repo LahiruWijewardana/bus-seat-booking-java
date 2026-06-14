@@ -88,11 +88,12 @@ public class SeatBookingHandler extends ResponseHandler implements HttpHandler {
         final String destination = requestHeaders.getFirst("destinationCity");
         final String customerId = requestHeaders.getFirst("customerId");
         final String passengerCount = requestHeaders.getFirst("passengerCount");
+        final String date = requestHeaders.getFirst("date");
 
-        RequestValidator.validateCheckAvailabilityRequest(origin, destination, passengerCount, customerId);
+        RequestValidator.validateCheckAvailabilityRequest(origin, destination, passengerCount, customerId, date);
 
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(origin, destination,
-                Integer.parseInt(passengerCount), customerId);
+                Integer.parseInt(passengerCount), customerId, date);
 
         this.sendResponse(httpExchange, 200, response);
     }

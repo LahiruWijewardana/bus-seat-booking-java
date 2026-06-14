@@ -14,6 +14,8 @@ public class CheckAvailabilityResponse {
 
     private String destination;
 
+    private String bookingDate;
+
     private int passengerCount;
 
     private double totalPrice;
@@ -26,7 +28,7 @@ public class CheckAvailabilityResponse {
         super();
     }
 
-    public SeatAvailabilityStatus isSeatsAvailable() {
+    public SeatAvailabilityStatus getSeatAvailabilityStatus() {
         return seatAvailabilityStatus;
     }
 
@@ -48,6 +50,14 @@ public class CheckAvailabilityResponse {
 
     public void setDestination(final String destination) {
         this.destination = destination;
+    }
+
+    public String getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(final String bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public int getPassengerCount() {

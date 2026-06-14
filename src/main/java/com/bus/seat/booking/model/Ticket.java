@@ -12,6 +12,8 @@ public class Ticket {
 
     private Journey journey;
 
+    private String bookingDate;
+
     private List<String> bookedSeats;
 
     private Double totalPrice;
@@ -19,10 +21,11 @@ public class Ticket {
     private Instant createdDateTime;
 
     public Ticket(final UUID ticketId, final String customerId, final Journey journey,
-                  final List<String> bookedSeats, final Double totalPrice) {
+                  final List<String> bookedSeats, final Double totalPrice, final String bookingDate) {
         this.ticketId = ticketId;
         this.customerId = customerId;
         this.journey = journey;
+        this.bookingDate = bookingDate;
         this.bookedSeats = bookedSeats;
         this.totalPrice = totalPrice;
         this.createdDateTime = Instant.now();
@@ -50,6 +53,14 @@ public class Ticket {
 
     public void setJourney(final Journey journey) {
         this.journey = journey;
+    }
+
+    public String getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(final String bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public List<String> getBookedSeats() {

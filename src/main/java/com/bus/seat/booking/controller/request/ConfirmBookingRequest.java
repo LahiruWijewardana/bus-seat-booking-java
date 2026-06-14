@@ -9,6 +9,8 @@ public class ConfirmBookingRequest {
 
     private Map<String, UUID> reservedSeats;
 
+    private String bookingDate;
+
     private BusTrip busTrip;
 
     private double totalPrice;
@@ -25,6 +27,14 @@ public class ConfirmBookingRequest {
 
     public void setReservedSeats(final Map<String, UUID> reservedSeats) {
         this.reservedSeats = reservedSeats;
+    }
+
+    public String getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(final String bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public BusTrip getBusTrip() {

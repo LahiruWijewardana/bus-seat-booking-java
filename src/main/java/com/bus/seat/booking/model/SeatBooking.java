@@ -1,6 +1,7 @@
 package com.bus.seat.booking.model;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public class SeatBooking {
@@ -8,6 +9,8 @@ public class SeatBooking {
     private UUID seatBookingId;
 
     private String seatNumber;
+
+    private LocalDate bookingDate;
 
     private String customerId;
 
@@ -26,12 +29,13 @@ public class SeatBooking {
     }
 
     public SeatBooking(final UUID seatBookingId, final String seatNumber, final String customerId,
-                       final BookingStatus bookingStatus, final Journey journey) {
+                       final BookingStatus bookingStatus, final Journey journey, final LocalDate bookingDate) {
         super();
 
         this.seatBookingId = seatBookingId;
         this.customerId = customerId;
         this.seatNumber = seatNumber;
+        this.bookingDate = bookingDate;
         this.bookingStatus = bookingStatus;
         this.journey = journey;
         this.createdDateTime = Instant.now();
@@ -51,6 +55,14 @@ public class SeatBooking {
 
     public void setSeatNumber(final String seatNumber) {
         this.seatNumber = seatNumber;
+    }
+
+    public LocalDate getBookingDate() {
+        return bookingDate;
+    }
+
+    public void setBookingDate(final LocalDate bookingDate) {
+        this.bookingDate = bookingDate;
     }
 
     public String getCustomerId() {

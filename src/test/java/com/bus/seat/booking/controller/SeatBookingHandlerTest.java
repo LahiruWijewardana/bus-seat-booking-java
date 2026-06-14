@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -38,7 +39,17 @@ class SeatBookingHandlerTest {
 
     private HttpExchange httpExchange;
 
-    private final Gson gson = new Gson();
+    private final Gson gson;
+
+    private final LocalDate testBookingDate;
+
+    private final String testBookingDateString;
+
+    SeatBookingHandlerTest() {
+        testBookingDate = LocalDate.now();
+        testBookingDateString = testBookingDate.toString();
+        gson = new Gson();
+    }
 
     @BeforeEach
     void beforeEach() {
@@ -59,6 +70,7 @@ class SeatBookingHandlerTest {
         headers.set("destinationCity", "B");
         headers.set("customerId", "customerId1");
         headers.set("passengerCount", "1");
+        headers.set("date", testBookingDateString);
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -75,7 +87,7 @@ class SeatBookingHandlerTest {
         final CheckAvailabilityResponse response =
                 gson.fromJson(outputStream.toString(), CheckAvailabilityResponse.class);
 
-        Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.isSeatsAvailable());
+        Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.getSeatAvailabilityStatus());
     }
 
     @Test
@@ -90,6 +102,7 @@ class SeatBookingHandlerTest {
         headers.set("destinationCity", "B");
         headers.set("customerId", "customerId1");
         headers.set("passengerCount", "1");
+        headers.set("date", testBookingDateString);
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -117,6 +130,7 @@ class SeatBookingHandlerTest {
         headers.set("originCity", "A");
         headers.set("customerId", "customerId1");
         headers.set("passengerCount", "1");
+        headers.set("date", testBookingDateString);
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -143,6 +157,7 @@ class SeatBookingHandlerTest {
         headers.set("originCity", "A");
         headers.set("destinationCity", "B");
         headers.set("customerId", "customerId1");
+        headers.set("date", testBookingDateString);
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -170,6 +185,7 @@ class SeatBookingHandlerTest {
         headers.set("destinationCity", "B");
         headers.set("customerId", "customerId1");
         headers.set("passengerCount", "A");
+        headers.set("date", testBookingDateString);
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -197,6 +213,62 @@ class SeatBookingHandlerTest {
         headers.set("destinationCity", "B");
         headers.set("customerId", "customerId1");
         headers.set("passengerCount", "0");
+        headers.set("date", testBookingDateString);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityNullDateStringThanOneThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // date is not available
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "1");
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("GET");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getRequestHeaders()).thenReturn(headers);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenCheckAvailabilityErroredDateStringThanOneThenShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/check-availability", null, null);
+
+        // date header is available. But it is not in correct format
+        final Headers headers = new Headers();
+        headers.set("originCity", "A");
+        headers.set("destinationCity", "B");
+        headers.set("customerId", "customerId1");
+        headers.set("passengerCount", "1");
+        headers.set("date", "2026-6-14"); // Should be 2026-06-14
 
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -218,11 +290,12 @@ class SeatBookingHandlerTest {
         // Add booking to 1A seat from A to C
         final CheckAvailabilityResponse checkAvailabilityResponse =
                 new CheckAvailabilityService().checkSeatAvailability(
-                "A", "C", 1, "customer1");
+                "A", "C", 1, "customer1", testBookingDateString);
 
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(checkAvailabilityResponse.getAvailableSeats());
         request.setBusTrip(checkAvailabilityResponse.getBusTrip());
+        request.setBookingDate(checkAvailabilityResponse.getBookingDate());
         request.setTotalPrice(checkAvailabilityResponse.getTotalPrice());
         request.setCustomerId("customerId1");
 
@@ -257,6 +330,7 @@ class SeatBookingHandlerTest {
         // Reserved seats list is null
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -289,6 +363,7 @@ class SeatBookingHandlerTest {
         // bus trip is null
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -322,7 +397,75 @@ class SeatBookingHandlerTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingErroredBookingDateThenHandlerShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
+        // Booking date is null in request
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setTotalPrice(100.0);
+        request.setCustomerId("customerId1");
+
+        final InputStream inputStream =
+                new ByteArrayInputStream(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+
+        final URI uri = new URI(null, null,
+                "/api/bookings/confirm", null, null);
+
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        Mockito.when(httpExchange.getRequestMethod()).thenReturn("POST");
+        Mockito.when(httpExchange.getRequestURI()).thenReturn(uri);
+        Mockito.when(httpExchange.getResponseHeaders()).thenReturn(new Headers());
+        Mockito.when(httpExchange.getRequestBody()).thenReturn(inputStream);
+        Mockito.when(httpExchange.getResponseBody()).thenReturn(outputStream);
+
+        seatBookingHandler.handle(httpExchange);
+
+        Mockito.verify(httpExchange).sendResponseHeaders(400, outputStream.toString().length());
+    }
+
+    @Test
+    void testWhenConfirmBookingInvalidBookingDateThenHandlerShouldReturnBadRequest()
+            throws IOException, URISyntaxException {
+
+        final Map<String, UUID> reservedSeatsMap = new HashMap<>();
+        reservedSeatsMap.put("1A", UUID.randomUUID());
+
+        // Booking date is available in the request. But it is errored
+        final ConfirmBookingRequest request = new ConfirmBookingRequest();
+        request.setReservedSeats(reservedSeatsMap);
+        request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate("2026-6-14"); // Should be 2026-06-14
+        request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
         final InputStream inputStream =
@@ -360,6 +503,7 @@ class SeatBookingHandlerTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -402,6 +546,7 @@ class SeatBookingHandlerTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -444,6 +589,7 @@ class SeatBookingHandlerTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 
@@ -487,6 +633,7 @@ class SeatBookingHandlerTest {
         final ConfirmBookingRequest request = new ConfirmBookingRequest();
         request.setReservedSeats(reservedSeatsMap);
         request.setBusTrip(BusTrip.FIRST_TRIP);
+        request.setBookingDate(testBookingDateString);
         request.setTotalPrice(100.0);
         request.setCustomerId("customerId1");
 

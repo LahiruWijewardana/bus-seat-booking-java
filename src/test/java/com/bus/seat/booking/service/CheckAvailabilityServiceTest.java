@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +26,15 @@ class CheckAvailabilityServiceTest {
 
     private CheckAvailabilityService checkAvailabilityService;
 
+    private final LocalDate testBookingDate;
+
+    private final String testBookingDateString;
+
+    CheckAvailabilityServiceTest() {
+        testBookingDate = LocalDate.now();
+        testBookingDateString = testBookingDate.toString();
+    }
+
     @BeforeEach
     void beforeEach() {
         DataInitializer.BOOKED_SEATS.clear();
@@ -35,9 +45,9 @@ class CheckAvailabilityServiceTest {
     void testWhenSeatBookedForOnePassengerAtoBThenCheckAvailabilityShouldReturnFullAvailable() {
 
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "B", 1, "customer1");
+                "A", "B", 1, "customer1", testBookingDateString);
 
-        Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.isSeatsAvailable());
+        Assertions.assertEquals(SeatAvailabilityStatus.FULLY_AVAILABLE, response.getSeatAvailabilityStatus());
         Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
     }
 
@@ -45,7 +55,7 @@ class CheckAvailabilityServiceTest {
     void testWhenSeatBookedForThreePassengerAtoBThenCheckAvailabilityShouldBookThreeSeats() {
 
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "B", 3, "customer1");
+                "A", "B", 3, "customer1", testBookingDateString);
 
         Assertions.assertEquals(3, response.getAvailableSeats().size());
         Assertions.assertEquals(150.0, response.getTotalPrice());
@@ -64,7 +74,7 @@ class CheckAvailabilityServiceTest {
 
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                        BookingStatus.PENDING, journey);
+                        BookingStatus.PENDING, journey, testBookingDate);
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
         seatBookingList.add(seatBooking);
@@ -72,11 +82,15 @@ class CheckAvailabilityServiceTest {
         final ConcurrentMap<BusTrip, List<SeatBooking>> seatBookingMap = new ConcurrentHashMap<>();
         seatBookingMap.put(BusTrip.FIRST_TRIP, seatBookingList);
 
-        DataInitializer.BOOKED_SEATS.put("1A", seatBookingMap);
+        final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                new ConcurrentHashMap<>();
+        dateToSeatMap.put("1A", seatBookingMap);
+
+        DataInitializer.BOOKED_SEATS.put(testBookingDate, dateToSeatMap);
 
         // Check availability of the seat. origin C. Destination D
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "C", "D", 1, "customer1");
+                "C", "D", 1, "customer1", testBookingDateString);
 
         Assertions.assertEquals(1, response.getAvailableSeats().size());
         Assertions.assertTrue(response.getAvailableSeats().containsKey("1A"));
@@ -95,7 +109,7 @@ class CheckAvailabilityServiceTest {
 
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                        BookingStatus.PENDING, journey);
+                        BookingStatus.PENDING, journey, testBookingDate);
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
         seatBookingList.add(seatBooking);
@@ -103,11 +117,15 @@ class CheckAvailabilityServiceTest {
         final ConcurrentMap<BusTrip, List<SeatBooking>> seatBookingMap = new ConcurrentHashMap<>();
         seatBookingMap.put(BusTrip.FIRST_TRIP, seatBookingList);
 
-        DataInitializer.BOOKED_SEATS.put("1A", seatBookingMap);
+        final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                new ConcurrentHashMap<>();
+        dateToSeatMap.put("1A", seatBookingMap);
+
+        DataInitializer.BOOKED_SEATS.put(testBookingDate, dateToSeatMap);
 
         // Check availability of the seat. origin A. Destination B
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "B", 1, "customer1");
+                "A", "B", 1, "customer1", testBookingDateString);
 
         // Check availability add booking for 1B seat since there is a booking in 1A seat from A to C
         Assertions.assertEquals(1, response.getAvailableSeats().size());
@@ -127,7 +145,7 @@ class CheckAvailabilityServiceTest {
 
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                        BookingStatus.PENDING, journey);
+                        BookingStatus.PENDING, journey, testBookingDate);
         seatBooking.setCreatedDateTime(Instant.now().minusSeconds(180));
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
@@ -136,11 +154,15 @@ class CheckAvailabilityServiceTest {
         final ConcurrentMap<BusTrip, List<SeatBooking>> seatBookingMap = new ConcurrentHashMap<>();
         seatBookingMap.put(BusTrip.FIRST_TRIP, seatBookingList);
 
-        DataInitializer.BOOKED_SEATS.put("1A", seatBookingMap);
+        final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                new ConcurrentHashMap<>();
+        dateToSeatMap.put("1A", seatBookingMap);
+
+        DataInitializer.BOOKED_SEATS.put(testBookingDate, dateToSeatMap);
 
         // Check availability of the seat. origin A. Destination C
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 1, "customer1");
+                "A", "C", 1, "customer1", testBookingDateString);
 
         // Check availability add booking for 1A seat since previous booking is expired without confirmation
         Assertions.assertEquals(1, response.getAvailableSeats().size());
@@ -160,7 +182,7 @@ class CheckAvailabilityServiceTest {
 
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                        BookingStatus.PENDING, journey);
+                        BookingStatus.PENDING, journey, testBookingDate);
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
         seatBookingList.add(seatBooking);
@@ -168,11 +190,15 @@ class CheckAvailabilityServiceTest {
         final ConcurrentMap<BusTrip, List<SeatBooking>> seatBookingMap = new ConcurrentHashMap<>();
         seatBookingMap.put(BusTrip.FIRST_TRIP, seatBookingList);
 
-        DataInitializer.BOOKED_SEATS.put("1A", seatBookingMap);
+        final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                new ConcurrentHashMap<>();
+        dateToSeatMap.put("1A", seatBookingMap);
+
+        DataInitializer.BOOKED_SEATS.put(testBookingDate, dateToSeatMap);
 
         // Check availability of the seat. origin D. Destination C. Return Trip
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "D", "C", 1, "customer1");
+                "D", "C", 1, "customer1", testBookingDateString);
 
         // Check availability add booking for 1A seat since it is fully available for return trip
         Assertions.assertEquals(1, response.getAvailableSeats().size());
@@ -193,7 +219,7 @@ class CheckAvailabilityServiceTest {
 
         final SeatBooking seatBooking =
                 new SeatBooking(UUID.randomUUID(), "1A", "customerId1",
-                        BookingStatus.PENDING, journey);
+                        BookingStatus.PENDING, journey, testBookingDate);
 
         final List<SeatBooking> seatBookingList = new ArrayList<>();
         seatBookingList.add(seatBooking);
@@ -201,14 +227,18 @@ class CheckAvailabilityServiceTest {
         final ConcurrentMap<BusTrip, List<SeatBooking>> seatBookingMap = new ConcurrentHashMap<>();
         seatBookingMap.put(BusTrip.FIRST_TRIP, seatBookingList);
 
-        DataInitializer.BOOKED_SEATS.put("1A", seatBookingMap);
+        final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                new ConcurrentHashMap<>();
+        dateToSeatMap.put("1A", seatBookingMap);
+
+        DataInitializer.BOOKED_SEATS.put(testBookingDate, dateToSeatMap);
 
         // Check availability of the seat. origin A. Destination C
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 40, "customer1");
+                "A", "C", 40, "customer1", testBookingDateString);
 
         // Check availability returns Partially available status since it can not book all 40 seats
-        Assertions.assertEquals(SeatAvailabilityStatus.PARTIALLY_AVAILABLE, response.isSeatsAvailable());
+        Assertions.assertEquals(SeatAvailabilityStatus.PARTIALLY_AVAILABLE, response.getSeatAvailabilityStatus());
         Assertions.assertEquals(39, response.getAvailableSeats().size());
         Assertions.assertEquals(3900.0, response.getTotalPrice());
     }
@@ -218,13 +248,13 @@ class CheckAvailabilityServiceTest {
 
         // Book all forty seats. origin A. Destination C
         checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 40, "customer1");
+                "A", "C", 40, "customer1", testBookingDateString);
 
         // Try booking same for 1 passenger
         final CheckAvailabilityResponse response = checkAvailabilityService.checkSeatAvailability(
-                "A", "C", 1, "customer2");
+                "A", "C", 1, "customer2", testBookingDateString);
 
         // Check availability returns Not available status since all seats are reserved temporally
-        Assertions.assertEquals(SeatAvailabilityStatus.NOT_AVAILABLE, response.isSeatsAvailable());
+        Assertions.assertEquals(SeatAvailabilityStatus.NOT_AVAILABLE, response.getSeatAvailabilityStatus());
     }
 }

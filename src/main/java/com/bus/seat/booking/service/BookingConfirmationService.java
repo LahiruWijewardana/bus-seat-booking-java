@@ -9,15 +9,18 @@ import com.bus.seat.booking.model.BookingStatus;
 import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
+import com.bus.seat.booking.util.DateUtils;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 
 public class BookingConfirmationService {
 
@@ -44,6 +47,7 @@ public class BookingConfirmationService {
         logger.info("CONFIRM BOOKING REQUEST : {}", gson.toJson(confirmBookingRequest));
 
         final Map<String, UUID> reservedSeats = confirmBookingRequest.getReservedSeats();
+        final LocalDate bookingDate = DateUtils.dateStringToDate(confirmBookingRequest.getBookingDate());
         final BusTrip busTrip = confirmBookingRequest.getBusTrip();
 
         final List<String> bookedSeatNumbers = new ArrayList<>();
@@ -59,7 +63,8 @@ public class BookingConfirmationService {
                 final UUID seatBookingId = requestedSeatBooking.getValue();
 
                 final SeatBooking originalSeatBooking =
-                        this.retrieveOriginalSeatBooking(seatNumber, seatBookingId, busTrip, confirmedBookings);
+                        this.retrieveOriginalSeatBooking(seatNumber, seatBookingId, busTrip,
+                                confirmedBookings, bookingDate);
 
                 try {
                     DataInitializer.READ_WRITE_LOCK.writeLock().lock();
@@ -92,7 +97,7 @@ public class BookingConfirmationService {
 
             final UUID ticketId = UUID.randomUUID();
             ticket = new Ticket(ticketId, confirmBookingRequest.getCustomerId(), confirmedBookings.get(0).getJourney(),
-                    bookedSeatNumbers, confirmBookingRequest.getTotalPrice());
+                    bookedSeatNumbers, confirmBookingRequest.getTotalPrice(), confirmBookingRequest.getBookingDate());
 
             DataInitializer.TICKETS_MAP.put(ticketId.toString(), ticket);
 
@@ -120,15 +125,22 @@ public class BookingConfirmationService {
      * @throws NotFoundException
      */
     private SeatBooking retrieveOriginalSeatBooking(final String seatNumber, final UUID seatBookingId,
-    final BusTrip busTrip, final List<SeatBooking> confirmedBookings) throws NotFoundException {
+    final BusTrip busTrip, final List<SeatBooking> confirmedBookings, final LocalDate bookingDate)
+    throws NotFoundException {
 
         SeatBooking originalSeatBooking;
 
         try {
             DataInitializer.READ_WRITE_LOCK.readLock().lock();
 
-            final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap =
-                    DataInitializer.BOOKED_SEATS.get(seatNumber);
+            final ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>> dateToSeatMap =
+                    DataInitializer.BOOKED_SEATS.get(bookingDate);
+
+            if (dateToSeatMap == null || dateToSeatMap.isEmpty()) {
+                this.handleErrorIfNoRecords(seatBookingId, confirmedBookings);
+            }
+
+            final Map<BusTrip, List<SeatBooking>> busTripToBookingsMap = dateToSeatMap.get(seatNumber);
 
             if (busTripToBookingsMap == null || busTripToBookingsMap.isEmpty()) {
                 this.handleErrorIfNoRecords(seatBookingId, confirmedBookings);
