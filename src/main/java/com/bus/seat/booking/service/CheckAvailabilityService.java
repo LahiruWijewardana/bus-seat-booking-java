@@ -10,6 +10,9 @@ import com.bus.seat.booking.model.Journey;
 import com.bus.seat.booking.model.SeatAvailabilityStatus;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.util.TripUtils;
+import com.google.gson.Gson;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,7 +30,16 @@ import static com.bus.seat.booking.configuration.DataInitializer.BOOKED_SEATS;
 
 public class CheckAvailabilityService {
 
+    private final Logger logger = LogManager.getLogger(CheckAvailabilityService.class);
+
     private static final List<String> SEAT_COLUMNS = Arrays.asList("A", "B", "C", "D");
+
+    private final Gson gson;
+
+    public CheckAvailabilityService() {
+        super();
+        gson = new Gson();
+    }
 
     /**
      * Check Availability of seats for the given trip and passenger count
@@ -40,6 +52,9 @@ public class CheckAvailabilityService {
      */
     public CheckAvailabilityResponse checkSeatAvailability(final String origin, final String destination,
     final int passengerCount, final String customerId) {
+
+        logger.info("ORIGIN: {}, DESTINATION: {}, PASSENGER_COUNT: {}, CUSTOMER_ID: {}",
+                origin, destination, passengerCount, customerId);
 
         final City originCity = TripUtils.determineCityFromCityString(origin);
         final City destinationCity = TripUtils.determineCityFromCityString(destination);
@@ -137,6 +152,8 @@ public class CheckAvailabilityService {
             checkAvailabilityResponse.setPassengerCount(0);
             checkAvailabilityResponse.setTotalPrice(0.00);
         }
+
+        logger.info("CHECK AVAILABILITY RESPONSE: {}", gson.toJson(checkAvailabilityResponse));
 
         return checkAvailabilityResponse;
     }

@@ -9,6 +9,7 @@ import com.bus.seat.booking.model.BookingStatus;
 import com.bus.seat.booking.model.BusTrip;
 import com.bus.seat.booking.model.SeatBooking;
 import com.bus.seat.booking.model.Ticket;
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +23,13 @@ public class BookingConfirmationService {
 
     private final Logger logger = LogManager.getLogger(BookingConfirmationService.class);
 
+    private final Gson gson;
+
+    public BookingConfirmationService() {
+        super();
+        gson = new Gson();
+    }
+
     /**
      * Confirm Booking of the reserved seats
      *
@@ -32,6 +40,8 @@ public class BookingConfirmationService {
      */
     public Ticket confirmBooking(final ConfirmBookingRequest confirmBookingRequest)
     throws NotFoundException, BadRequestException, BookingExpiredException {
+
+        logger.info("CONFIRM BOOKING REQUEST : {}", gson.toJson(confirmBookingRequest));
 
         final Map<String, UUID> reservedSeats = confirmBookingRequest.getReservedSeats();
         final BusTrip busTrip = confirmBookingRequest.getBusTrip();
@@ -93,6 +103,8 @@ public class BookingConfirmationService {
             throw new BadRequestException("BAD REQUEST : reservedSeats List is NULL or EMPTY");
 
         }
+
+        logger.info("TICKET: {}", gson.toJson(ticket));
 
         return ticket;
     }
