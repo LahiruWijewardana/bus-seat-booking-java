@@ -1,6 +1,5 @@
 plugins {
     id 'java'
-    id 'war'
 }
 
 repositories {
@@ -9,6 +8,20 @@ repositories {
 
 test {
     useJUnitPlatform()
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Main-Class': 'com.bus.seat.booking.BusSeatBookingApp'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 dependencies {

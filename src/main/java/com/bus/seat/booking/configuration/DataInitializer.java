@@ -17,10 +17,16 @@ public class DataInitializer {
     /**
      * Map Seat number to booked list of Seat bookings
      * Ex:
+     *   "2026-06-15" -> {
      *      1A -> { FIRST_TRIP -> [ Booking1, Booking2 ], RETURN_TRIP -> [ Booking6 ] },
      *      1B -> { FIRST_TRIP -> [ Booking7 ], RETURN_TRIP -> [ Booking12 ] }
      *      ......
      *      10D -> { FIRST_TRIP -> [ Booking100 ], RETURN_TRIP -> [ Booking101 ] }
+     *
+     *    },
+     *    "2026-06-16" -> {
+     *        ......
+     *    }
      */
     public static final ConcurrentMap<LocalDate, ConcurrentMap<String, ConcurrentMap<BusTrip, List<SeatBooking>>>> BOOKED_SEATS =
             new ConcurrentHashMap<>();
